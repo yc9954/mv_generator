@@ -1,0 +1,62 @@
+# Core dependencies for 4DGS MV Pipeline on Google Colab
+#
+# Installation instructions:
+#   pip install -r requirements.txt
+#
+# Note: For CUDA-compatible PyTorch, use:
+#   pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Core scientific computing
+numpy>=1.24.0
+scipy>=1.10.0
+
+# PyTorch (CUDA version - install separately or via extra-index-url)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Computer vision
+opencv-python-headless>=4.8.0
+Pillow>=10.0.0
+
+# Video processing
+ffmpeg-python>=0.2.0
+
+# 3D geometry and visualization
+open3d>=0.17.0
+trimesh>=3.23.0
+
+# Segmentation and matting
+git+https://github.com/facebookresearch/segment-anything.git
+git+https://github.com/PeterL1n/RobustVideoMatting.git
+
+# Super-resolution
+realesrgan>=0.3.0
+gfpgan>=1.3.8
+basicsr>=1.4.2
+
+# COLMAP Python bindings (may require system COLMAP installation)
+# pycolmap==0.4.0  # Uncomment if system COLMAP is available
+
+# Progress and utilities
+tqdm>=4.66.0
+colorama>=0.4.6
+
+# Data processing
+pandas>=2.0.0
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+
+# Optical flow (for temporal smoothing)
+# RAFT or similar - typically installed separately
+
+# Notebook execution (for headless mode)
+papermill>=2.4.0
+ipykernel>=6.25.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Configuration and logging
+pyyaml>=6.0.1
+python-dotenv>=1.0.0

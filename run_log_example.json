@@ -1,0 +1,40 @@
+{
+  "job_id": "colab-demo",
+  "stage": "complete",
+  "frames_count": 150,
+  "artifacts": {
+    "frames_dir": "/content/drive/MyDrive/mvp_4dgs_job/frames",
+    "masks_coarse_dir": "/content/drive/MyDrive/mvp_4dgs_job/masks/coarse",
+    "masks_alpha_dir": "/content/drive/MyDrive/mvp_4dgs_job/masks/alpha",
+    "poses": "/content/drive/MyDrive/mvp_4dgs_job/poses/poses.json",
+    "bg_shim": "/content/drive/MyDrive/mvp_4dgs_job/gs_shim/bg_plane.ply",
+    "actor_rgba": "/content/drive/MyDrive/mvp_4dgs_job/actor_rgba",
+    "preview_video": "/content/drive/MyDrive/mvp_4dgs_job/outputs/preview.mp4",
+    "sr_sample": "/content/drive/MyDrive/mvp_4dgs_job/outputs/sr_sample.png"
+  },
+  "config": {
+    "debug_shim": true,
+    "fps": 30,
+    "is_a100": true
+  },
+  "timestamp": 1733500000,
+  "runtime_stats": {
+    "total_duration_seconds": 420,
+    "stages": {
+      "frame_extraction": 45,
+      "segmentation": 8,
+      "matting": 7,
+      "temporal_smoothing": 52,
+      "colmap": 48,
+      "gs_shim": 3,
+      "actor_export": 18,
+      "composite": 12,
+      "sr_test": 9
+    }
+  },
+  "quality_metrics": {
+    "avg_pose_quality": 0.82,
+    "total_artifacts": 163,
+    "disk_usage_mb": 1247
+  }
+}
