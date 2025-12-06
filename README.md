@@ -11,12 +11,13 @@ This repository provides a complete, debuggable implementation of a Multi-View p
 ## Features
 
 - 🚀 **One-Click Colab**: Copy notebook to Colab and run all cells
-- 🔄 **DEBUG_SHIM Mode**: Lightweight Python-based shims for rapid development (default)
-- 🏭 **Production Mode**: Real 4DGS binary integration when ready
+- 🏭 **Production Mode**: Real 4DGS binary with automatic build (default)
+- 🔄 **DEBUG_SHIM Mode**: Lightweight Python-based shims for rapid testing
 - 💾 **Checkpoint Support**: Resume from any pipeline stage
 - 📊 **Progress Tracking**: JSON manifests for every stage
 - 🛡️ **Robust Fallbacks**: Graceful degradation when heavy dependencies missing
 - 📁 **Drive Integration**: All data persists on Google Drive
+- ⚡ **Smart Caching**: Skip 4DGS build on subsequent runs
 
 ## Quick Start
 
@@ -38,7 +39,9 @@ Run the first cell to mount your Google Drive. This creates a workspace at:
 
 ### 3. Run Pipeline
 
-Execute cells in order. The default `DEBUG_SHIM=True` mode runs a complete lightweight demo without requiring heavy dependencies.
+Execute cells in order. The default `DEBUG_SHIM=False` mode automatically builds and uses real 4DGS for production-quality results.
+
+**Note**: First-time setup includes 10-20 minutes for 4DGS build. Subsequent runs skip this step.
 
 ## Pipeline Stages
 
@@ -115,9 +118,19 @@ pytest tests/
 
 ## Configuration
 
-### DEBUG_SHIM Mode (Default)
+### Production Mode (Default)
 
-Set in Configuration cell:
+**New default mode** uses real 4DGS for production-quality results:
+
+```python
+DEBUG_SHIM = False  # Production mode (default)
+```
+
+**4DGS is built automatically** during dependency installation (Cell 4.5). No manual setup required!
+
+### DEBUG_SHIM Mode (Lightweight)
+
+For quick testing without building 4DGS:
 
 ```python
 DEBUG_SHIM = True  # Lightweight demo mode
@@ -129,18 +142,6 @@ This mode uses:
 - OpenCV SIFT+PnP fallback for camera poses
 - Open3D background plane instead of 4DGS
 
-### Production Mode
-
-To use real 4DGS:
-
-```python
-DEBUG_SHIM = False  # Production mode
-```
-
-**Prerequisites:**
-1. Build 4DGS binary (see instructions below)
-2. Set `FOURGS_REPO` path
-
 ### Optional Checkpoints
 
 ```python
@@ -150,17 +151,29 @@ RVM_CHECKPOINT = "/path/to/rvm_mobilenetv3.pth"   # For real RVM
 
 ## Building Real 4DGS
 
-To use a real 4DGS implementation instead of the shim:
+**4DGS is now built automatically!**
 
-### Option 1: In Colab (Automated)
+When `DEBUG_SHIM=False` (default), the notebook automatically:
+1. Clones 4DGaussians repository with submodules
+2. Installs PyTorch 2.0.1 (Colab-compatible)
+3. Builds CUDA extensions
+4. Verifies installation
 
-Run the build instructions cell at the end of the notebook:
+**First-time build**: 10-20 minutes
+**Subsequent runs**: Skipped if already built
 
+### Manual Rebuild
+
+If you need to rebuild 4DGS:
+
+1. Delete existing installation:
 ```python
-!bash /content/mvp_repo/scripts/build_4dgs_shim.sh
+!rm -rf /content/4dgs_repo
 ```
 
-### Option 2: Manual Build
+2. Re-run Cell 4.5 (Build 4DGaussians)
+
+### Alternative: Manual Build
 
 ```bash
 # 1. Clone 4DGaussians
