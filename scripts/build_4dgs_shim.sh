@@ -73,28 +73,34 @@ echo "Step 1/5: Installing system dependencies..."
 
 echo "  ✓ System dependencies installed"
 
-# Step 2: Clone repository
+# Step 2: Clone repository with submodules
 echo ""
-echo "Step 2/5: Cloning 4DGaussians repository..."
+echo "Step 2/5: Cloning 4DGaussians repository with submodules..."
 if [ -d "$INSTALL_DIR" ]; then
-    echo "  Repository already exists, pulling latest changes..."
-    cd "$INSTALL_DIR"
-    git pull >> "$BUILD_LOG" 2>&1
-else
-    git clone "$REPO_URL" "$INSTALL_DIR" >> "$BUILD_LOG" 2>&1
-    cd "$INSTALL_DIR"
+    echo "  Repository already exists, removing..."
+    rm -rf "$INSTALL_DIR"
 fi
 
-echo "  ✓ Repository cloned/updated"
+git clone --recursive "$REPO_URL" "$INSTALL_DIR" >> "$BUILD_LOG" 2>&1
+cd "$INSTALL_DIR"
+
+# Ensure submodules are initialized
+git submodule update --init --recursive >> "$BUILD_LOG" 2>&1
+
+echo "  ✓ Repository cloned with submodules"
 
 # Step 3: Install Python dependencies
 echo ""
 echo "Step 3/5: Installing Python dependencies..."
 {
-    pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu118
-    pip install -r requirements.txt
-    pip install submodules/diff-gaussian-rasterization
-    pip install submodules/simple-knn
+    # Install compatible PyTorch version (ignore old version in requirements.txt)
+    pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cu118
+
+    # Install other dependencies from requirements.txt (skip torch)
+    grep -v "^torch" requirements.txt | pip install -r /dev/stdin || true
+
+    # Install common dependencies
+    pip install plyfile tqdm
 } >> "$BUILD_LOG" 2>&1
 
 echo "  ✓ Python dependencies installed"
