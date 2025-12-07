@@ -11,21 +11,16 @@ import argparse
 import subprocess
 import shutil
 from pathlib import Path
-from tqdm import tqdm
-import cv2
-import numpy as np
 
-# Add src to path for helpers
-current_dir = Path(__file__).parent.resolve()
-src_dir = current_dir / "src"
-if src_dir.exists():
-    sys.path.insert(0, str(src_dir))
-
-try:
-    from runpod_helpers import ensure_dirs, validate_input_video, render_green_screen, log_and_print
-except ImportError:
-    print("❌ Critical: src/runpod_helpers.py not found.")
-    sys.exit(1)
+# Lazy import helper
+def get_runpod_helpers():
+    try:
+        from runpod_helpers import ensure_dirs, validate_input_video, render_green_screen, log_and_print
+        return ensure_dirs, validate_input_video, render_green_screen, log_and_print
+    except ImportError:
+        # If imports fail (before dependencies install), return placeholders or None
+        # We will handle this by ensuring install_dependencies runs first
+        return None, None, None, None
 
 
 def run_command(cmd, desc=None, check=True):
@@ -173,6 +168,7 @@ def extract_frames(input_path, frames_dir, fps):
         f"-qscale:v 2 "
         f"\"{frames_pattern}\""
     )
+
     
     run_command(cmd, "Running ffmpeg")
     
@@ -183,12 +179,18 @@ def extract_frames(input_path, frames_dir, fps):
 
 def generate_masks(frames_dir, coarse_dir, alpha_dir):
     """Generate masks (Placeholder or Logic)."""
+
+    # Import locally
+    import cv2
+    from tqdm import tqdm
+
     print("Generating masks...")
     
     frames = sorted(frames_dir.glob("*.png"))
     
     for f in tqdm(frames, desc="Processing Masks"):
         img = cv2.imread(str(f))
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         # Simple threshold (Placeholder logic)
@@ -260,6 +262,12 @@ def export_green_screen(root, fps):
     frames_dir = Path(root) / "frames"
     alpha_dir = Path(root) / "masks" / "alpha"
     
+    # Import locally
+    import cv2
+    from tqdm import tqdm
+    # Get helpers
+    _, _, render_green_screen, _ = get_runpod_helpers()
+
     print("Compositing RGBA and Green Screen...")
     
     frames = sorted(frames_dir.glob("*.png"))
@@ -267,6 +275,7 @@ def export_green_screen(root, fps):
     
     # generate RGBA
     for f, a in tqdm(zip(frames, alphas), total=len(frames), desc="Compositing"):
+
         img = cv2.imread(str(f))
         alpha = cv2.imread(str(a), cv2.IMREAD_GRAYSCALE)
         
@@ -293,9 +302,29 @@ def main():
     
     args = parser.parse_args()
     
-    # Setup
+    args = parser.parse_args()
+    
+    # Add src to path for helpers logic
+    current_dir = Path(__file__).parent.resolve()
+    src_dir = current_dir / "src"
+    if src_dir.exists():
+        sys.path.insert(0, str(src_dir))
+
+    # Setup - Standard Libraries Only first
     check_runtime()
+
+    # Dependencies - Install BEFORE any other imports
+    install_dependencies(args.root, args.repo, args.debug_shim)
+    
+    # Now we can import helpers
+    ensure_dirs, validate_input_video, render_green_screen, log_and_print = get_runpod_helpers()
+    
+    if ensure_dirs is None:
+        print("❌ Failed to import helpers even after installation. Please restart script.")
+        sys.exit(1)
+
     dirs = ensure_dirs(args.root)
+
     
     # Manual Input Override
     if args.input:
