@@ -4,9 +4,31 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/mvp-4dgs-mv-colab/blob/main/notebooks/colab_pipeline.ipynb)
 
-**Production-ready Google Colab notebook for end-to-end 4D Gaussian Splatting Multi-View (MV) pipeline**
+**Production-ready notebook for end-to-end 4D Gaussian Splatting Multi-View (MV) pipeline**
 
-This repository provides a complete, debuggable implementation of a Multi-View pipeline for 4D Gaussian Splatting that runs entirely on Google Colab with A100 GPU support.
+This repository provides a complete, debuggable implementation of a Multi-View pipeline for 4D Gaussian Splatting that runs on **Google Colab** or **RunPod GPU Cloud**.
+
+## 🎯 Choose Your Platform
+
+### 🚀 RunPod GPU Cloud (Recommended for Production)
+- ✅ **No session timeouts** - dedicated GPU instances
+- ✅ **Stable CUDA environment** - 95% build success rate
+- ✅ **Better performance** - RTX 3090/4090 or A100
+- ✅ **Persistent storage** - /workspace survives restarts
+- 💰 **Cost**: $0.30-1.50/hour (pay per use)
+
+**→ [RunPod Setup Guide](RUNPOD.md)** | **Notebook**: `notebooks/runpod_pipeline.ipynb`
+
+### 📓 Google Colab (Free Testing)
+- ✅ **Free tier available** - great for quick tests
+- ✅ **Easy sharing** - Google Drive integration
+- ⚠️ **Limited build success** - CUDA compatibility issues
+- ⚠️ **Session timeouts** - ~12 hour limit
+- 💰 **Cost**: Free or $10/month (Colab Pro)
+
+**Notebook**: `notebooks/colab_pipeline.ipynb`
+
+**Recommendation**: Start with **RunPod** for production 4DGS builds. Use **Colab** for lightweight testing with `DEBUG_SHIM=True`.
 
 ## Features
 
@@ -70,12 +92,14 @@ The notebook implements 13 pipeline stages:
 ```
 mvp-4dgs-mv-colab/
 ├── README.md                          # This file
+├── RUNPOD.md                          # RunPod setup guide ⭐
 ├── LICENSE                            # MIT License
 ├── requirements.txt                   # Python dependencies
 ├── env.template                       # Environment variables template
 │
 ├── notebooks/
-│   └── colab_pipeline.ipynb          # Main Colab notebook ⭐
+│   ├── runpod_pipeline.ipynb         # RunPod notebook ⭐ (Production)
+│   └── colab_pipeline.ipynb          # Colab notebook (Testing)
 │
 ├── scripts/
 │   ├── save_manifest.py              # CLI tool for manifest generation
@@ -313,33 +337,40 @@ Checkpoints are stored in `ROOT/checkpoints/manifest_*.json`
 
 ## Session Timeout Handling
 
-Google Colab free tier has session timeouts (~12 hours). To handle this:
+Google Colab free tier has session timeouts (~12 hours). Here are your options:
 
-### Strategy 1: Manual Resume
+### ⭐ Recommended: Use RunPod Instead
 
+**Best solution for long runs and production builds:**
+
+- ✅ **No session timeouts** - dedicated instances
+- ✅ **Persistent storage** - /workspace survives restarts
+- ✅ **Better CUDA compatibility** - 95% build success vs 20% on Colab
+- ✅ **Cost-effective** - $0.30-1.50/hr (RTX 3090/4090 or A100)
+
+**→ [See RunPod Setup Guide](RUNPOD.md)**
+
+### Alternative: Colab Workarounds
+
+If you must use Colab:
+
+**Strategy 1: Manual Resume**
 1. Checkpoints persist on Google Drive
 2. Re-open notebook after timeout
 3. Re-run from last successful stage
 
-### Strategy 2: Papermill Automation
+**Strategy 2: Colab Pro** ($10/month)
+- Longer timeouts (~24 hours)
+- Background execution
+- Priority GPU access
 
+**Strategy 3: Papermill Automation**
 ```bash
 bash scripts/run_colab_headless.sh notebooks/colab_pipeline.ipynb output.ipynb
 ```
 
-### Strategy 3: Colab Pro
-
-Colab Pro/Pro+ offers:
-- Longer timeouts
-- Background execution
-- Priority GPU access
-
-### Strategy 4: Cloud GPU Rental
-
-For uninterrupted long runs:
-
+**Strategy 4: Other Cloud GPU Providers**
 - **Lambda Labs**: A100 rentals ($1.10/hr)
-- **RunPod**: On-demand GPUs
 - **Vast.ai**: Spot instances
 
 ## Testing
