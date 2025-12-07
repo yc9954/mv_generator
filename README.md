@@ -17,6 +17,8 @@ This repository provides a complete, debuggable implementation of a Multi-View p
 - 📊 **Progress Tracking**: JSON manifests for every stage
 - 🛡️ **Robust Fallbacks**: Graceful degradation when heavy dependencies missing
 - 📁 **Drive Integration**: All data persists on Google Drive
+- 🟩 **Green Screen**: Export subjects on green screen for easy compositing (RunPod only)
+
 
 ## Quick Start
 
@@ -39,6 +41,24 @@ Run the first cell to mount your Google Drive. This creates a workspace at:
 ### 3. Run Pipeline
 
 Execute cells in order. The default `DEBUG_SHIM=True` mode runs a complete lightweight demo without requiring heavy dependencies.
+
+### 4. Run on RunPod (Python Script)
+
+### 4. Run on RunPod (Python Script)
+
+1. **Deploy Instance**: Use a template with **CUDA 11.8** support (e.g., RunPod PyTorch 1.13.1 or a base CUDA 11.8 image).
+   - *Note: Do NOT use PyTorch 2.0+ templates as 4DGS requires PyTorch 1.13.1.*
+2. **Setup**: Ensure `/workspace` volume is attached.
+3. **Upload**: Upload `run_pipeline.py` and `src/` folder to `/workspace`.
+4. **Run**:
+   ```bash
+   # Upload video to /workspace/mvp_4dgs_job/input/ OR pass path
+   python run_pipeline.py --input mysample.mp4 --debug_shim
+   
+   # Production Run (script will auto-downgrade PyTorch if needed)
+   python run_pipeline.py
+   ```
+
 
 ## Pipeline Stages
 
