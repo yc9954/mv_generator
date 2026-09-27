@@ -177,8 +177,11 @@ def extract_frames(input_path, frames_dir, fps):
     return count
 
 
-def generate_masks(frames_dir, coarse_dir, alpha_dir):
-    """Generate masks (Placeholder or Logic)."""
+def generate_masks(frames_dir, coarse_dir, alpha_dir, threshold=30, blur=(7, 7)):
+    """Generate masks (Placeholder or Logic).
+
+    threshold/blur default to this script's historical values; the Colab notebook uses 100 and (15, 15).
+    """
 
     # Import locally
     import cv2
@@ -195,13 +198,13 @@ def generate_masks(frames_dir, coarse_dir, alpha_dir):
         
         # Simple threshold (Placeholder logic)
         # In real usage, you'd insert SAM/RVM here
-        _, mask = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+        _, mask = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
         
         # Coarse
         cv2.imwrite(str(coarse_dir / (f.stem + "_mask.png")), mask)
         
         # Alpha (Softened)
-        alpha = cv2.GaussianBlur(mask, (7, 7), 0)
+        alpha = cv2.GaussianBlur(mask, blur, 0)
         cv2.imwrite(str(alpha_dir / (f.stem + "_alpha.png")), alpha)
 
     print("✓ Masks generated")

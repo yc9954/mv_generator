@@ -4,7 +4,7 @@ This directory contains minimal synthetic test data for the 4DGS MV pipeline.
 
 ## Files
 
-- `tiny_sample.mp4` - A minimal test video (placeholder - generate with ffmpeg from frames)
+- `tiny_sample.mp4` - The five frames below encoded at 5 fps (2.4 KB); regenerate with the ffmpeg line further down if you change the frames
 - `synthetic_test_frames/` - 5 synthetic test frames (640x480 PNG)
 
 ## Generating the test video
