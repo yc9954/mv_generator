@@ -1,488 +1,180 @@
-# MVP 4DGS MV Colab
+<h1 align="center">mv_generator</h1>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/mvp-4dgs-mv-colab/blob/main/notebooks/colab_pipeline.ipynb)
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-08C?style=flat" alt="MIT" /></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-4493F8?style=flat" alt="Python 3.10+" />
+  <img src="https://img.shields.io/badge/Google%20Colab%20%C2%B7%20RunPod-4493F8?style=flat" alt="Google Colab and RunPod" />
+  <img src="https://img.shields.io/badge/PyTorch-1.13.1%20(4DGS)-4493F8?style=flat" alt="PyTorch 1.13.1 for 4DGS" />
+  <a href="https://colab.research.google.com/github/yc9954/mv_generator/blob/claude/4dgs-colab-setup-01EzHeaT6YawPrxxsB3bYmUp/notebooks/colab_pipeline.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+</p>
 
-**Production-ready Google Colab notebook for end-to-end 4D Gaussian Splatting Multi-View (MV) pipeline**
+<p align="center">
+  <strong>A Colab and RunPod scaffold for a single-video-to-4D-Gaussian-Splatting pipeline, with a shim for every heavy stage.</strong><br/>
+  Upload a video, extract frames, mask the subject, estimate poses, train 4DGS, and export the actor as RGBA<br/>
+  or over a green screen. Every stage writes a JSON manifest to Drive or <code>/workspace</code> so a run can be resumed.<br/>
+  In its current state most stages run as lightweight placeholders; see <a href="#project-status">Project status</a> before relying on the output.
+</p>
 
-This repository provides a complete, debuggable implementation of a Multi-View pipeline for 4D Gaussian Splatting that runs entirely on Google Colab with A100 GPU support.
+<h3 align="center"><a href="#getting-started"><ins>Getting started</ins></a></h3>
 
 ## Features
 
-- 🚀 **One-Click Colab**: Copy notebook to Colab and run all cells
-- 🔄 **DEBUG_SHIM Mode**: Lightweight Python-based shims for rapid development (default)
-- 🏭 **Production Mode**: Real 4DGS binary integration when ready
-- 💾 **Checkpoint Support**: Resume from any pipeline stage
-- 📊 **Progress Tracking**: JSON manifests for every stage
-- 🛡️ **Robust Fallbacks**: Graceful degradation when heavy dependencies missing
-- 📁 **Drive Integration**: All data persists on Google Drive
-- 🟩 **Green Screen**: Export subjects on green screen for easy compositing (RunPod only)
-
-
-## Quick Start
-
-### 1. Open in Colab
-
-Click the badge above or use this direct link:
-
-```
-https://colab.research.google.com/github/YOUR_USERNAME/mvp-4dgs-mv-colab/blob/main/notebooks/colab_pipeline.ipynb
-```
-
-### 2. Mount Google Drive
-
-Run the first cell to mount your Google Drive. This creates a workspace at:
-
-```
-/content/drive/MyDrive/mvp_4dgs_job
-```
-
-### 3. Run Pipeline
-
-Execute cells in order. The default `DEBUG_SHIM=True` mode runs a complete lightweight demo without requiring heavy dependencies.
-
-### 4. Run on RunPod (Python Script)
-
-### 4. Run on RunPod (Python Script)
-
-1. **Deploy Instance**: Use a template with **CUDA 11.8** support (e.g., RunPod PyTorch 1.13.1 or a base CUDA 11.8 image).
-   - *Note: Do NOT use PyTorch 2.0+ templates as 4DGS requires PyTorch 1.13.1.*
-2. **Setup**: Ensure `/workspace` volume is attached.
-3. **Upload**: Upload `run_pipeline.py` and `src/` folder to `/workspace`.
-4. **Run**:
-   ```bash
-   # Upload video to /workspace/mvp_4dgs_job/input/ OR pass path
-   python run_pipeline.py --input mysample.mp4 --debug_shim
-   
-   # Production Run (script will auto-downgrade PyTorch if needed)
-   python run_pipeline.py
-   ```
-
-
-## Pipeline Stages
-
-The notebook implements 13 pipeline stages:
-
-| Stage | Description | Runtime (DEBUG_SHIM=True) |
-|-------|-------------|---------------------------|
-| 1. Runtime Check | Detect GPU, check for A100 | <5s |
-| 2. Drive Mount | Mount Drive, create workspace | ~10s |
-| 3. Configuration | Set DEBUG_SHIM and parameters | <1s |
-| 4. Dependencies | Install packages | 2-5min (first time) |
-| 5. Input Upload | Upload or select video | Manual |
-| 6. Frame Extraction | ffmpeg extract frames | 10-60s |
-| 7. Coarse Segmentation | SAM or placeholder masks | <10s (placeholder) |
-| 8. Alpha Matting | RVM or placeholder mattes | <10s (placeholder) |
-| 9. Temporal Smoothing | Optical flow smoothing | 30-60s |
-| 10. COLMAP Poses | Camera pose estimation | 30-60s (fallback) |
-| 11. GS Shim | Background plane generation | <5s |
-| 12. Actor RGBA | Export actor with alpha | 10-30s |
-| 13. Composite Preview | Generate preview video | 10-20s |
-
-**Total runtime (DEBUG_SHIM=True)**: ~5-10 minutes
-
-## Repository Structure
-
-```
-mvp-4dgs-mv-colab/
-├── README.md                          # This file
-├── LICENSE                            # MIT License
-├── requirements.txt                   # Python dependencies
-├── env.template                       # Environment variables template
-│
-├── notebooks/
-│   └── colab_pipeline.ipynb          # Main Colab notebook ⭐
-│
-├── scripts/
-│   ├── save_manifest.py              # CLI tool for manifest generation
-│   ├── build_4dgs_shim.sh           # Build instructions for real 4DGS
-│   └── run_colab_headless.sh        # Papermill automation script
-│
-├── src/
-│   ├── colab_helpers.py              # Drive path, checkpoint, logging utils
-│   └── gs_shim.py                    # Lightweight GS shim (Open3D)
-│
-├── samples/
-│   ├── tiny_sample.mp4               # Tiny test video
-│   ├── synthetic_test_frames/        # Test PNG frames
-│   └── README.md                     # Sample data documentation
-│
-└── tests/
-    ├── test_colab_helpers.py         # Unit tests for helpers
-    └── test_gs_shim.py               # Unit tests for GS shim
-```
-
-## Installation
-
-### For Colab (Recommended)
-
-No installation needed! Just open the notebook in Colab.
-
-### For Local Development
-
-```bash
-# Clone repository
-git clone https://github.com/YOUR_USERNAME/mvp-4dgs-mv-colab.git
-cd mvp-4dgs-mv-colab
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-pytest tests/
-```
-
-## Configuration
-
-### DEBUG_SHIM Mode (Default)
-
-Set in Configuration cell:
-
-```python
-DEBUG_SHIM = True  # Lightweight demo mode
-```
-
-This mode uses:
-- Placeholder segmentation (threshold-based)
-- Placeholder matting (Gaussian smoothing)
-- OpenCV SIFT+PnP fallback for camera poses
-- Open3D background plane instead of 4DGS
-
-### Production Mode
-
-To use real 4DGS:
-
-```python
-DEBUG_SHIM = False  # Production mode
-```
-
-**Prerequisites:**
-1. Build 4DGS binary (see instructions below)
-2. Set `FOURGS_REPO` path
-
-### Optional Checkpoints
-
-```python
-SAM_CHECKPOINT = "/path/to/sam_vit_h_4b8939.pth"  # For real SAM
-RVM_CHECKPOINT = "/path/to/rvm_mobilenetv3.pth"   # For real RVM
-```
-
-## Building Real 4DGS
-
-To use a real 4DGS implementation instead of the shim:
-
-### Option 1: In Colab (Automated)
-
-Run the build instructions cell at the end of the notebook:
-
-```python
-!bash /content/mvp_repo/scripts/build_4dgs_shim.sh
-```
-
-### Option 2: Manual Build
-
-```bash
-# 1. Clone 4DGaussians
-git clone https://github.com/hustvl/4DGaussians.git /content/4dgs_repo
-cd /content/4dgs_repo
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Install PyTorch with CUDA 11.8
-pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu118
-
-# 4. Build CUDA extensions
-cd submodules/diff-gaussian-rasterization
-python setup.py install
-cd ../simple-knn
-python setup.py install
-```
-
-### Expected Output
-
-- Binary: `/content/4dgs_repo/train.py`
-- Time: 10-20 minutes
-- Disk: ~2GB
-
-### Running Real 4DGS
-
-Once built, set `DEBUG_SHIM=False` and re-run the notebook. Cell 12 will execute:
-
-```bash
-python /content/4dgs_repo/train.py \
-  --source_path /content/drive/MyDrive/mvp_4dgs_job/frames \
-  --model_path /content/drive/MyDrive/mvp_4dgs_job/gs \
-  --images /content/drive/MyDrive/mvp_4dgs_job/frames \
-  --eval
-```
-
-## PyTorch and CUDA
-
-The notebook requires PyTorch with CUDA support. Install with:
-
-```bash
-pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu118
-```
-
-For Colab, this is typically pre-installed. Verify with:
-
-```python
-import torch
-print(f"PyTorch: {torch.__version__}")
-print(f"CUDA available: {torch.cuda.is_available()}")
-print(f"CUDA version: {torch.version.cuda}")
-```
-
-## GPU Requirements
-
-### Recommended
-
-- **GPU**: NVIDIA A100 (40GB VRAM)
-- **Runtime**: Colab Pro or Pro+ for A100 access
-- **VRAM**: 40GB for full pipeline with real 4DGS
-
-### Minimum
-
-- **GPU**: Any CUDA-capable GPU
-- **VRAM**: 8GB for DEBUG_SHIM mode
-- **Runtime**: Free Colab tier (with limitations)
-
-### Check GPU
-
-```python
-!nvidia-smi
-```
-
-Look for "A100" in the output. The notebook auto-detects and saves this to metadata.
-
-## Output Artifacts
-
-All outputs are saved to Google Drive under `ROOT` directory:
-
-```
-/content/drive/MyDrive/mvp_4dgs_job/
-├── input/
-│   └── input.mp4                     # Input video
-├── frames/
-│   └── *.png                         # Extracted frames
-├── masks/
-│   ├── coarse/*.png                  # Coarse masks
-│   └── alpha/*.png                   # Alpha mattes
-├── poses/
-│   └── poses.json                    # Camera poses
-├── gs_shim/
-│   └── bg_plane.ply                  # Background plane (DEBUG_SHIM)
-├── gs/                               # 4DGS outputs (production mode)
-├── actor_rgba/
-│   ├── *.png                         # Actor RGBA frames
-│   └── actor_meta.json               # Actor metadata
-├── outputs/
-│   ├── preview.mp4                   # Composite preview
-│   └── sr_sample.png                 # Super-resolution sample
-├── logs/
-│   └── *.log                         # All logs
-├── checkpoints/
-│   ├── manifest_*.json               # Stage manifests
-│   └── manifest_latest.json          # Latest checkpoint
-└── runs_meta.json                    # Run metadata
-```
-
-## Manifest Format
-
-All checkpoints follow this schema:
-
-```json
-{
-  "job_id": "colab-demo",
-  "stage": "frames_extracted",
-  "frames_count": 123,
-  "artifacts": {
-    "frames_dir": "/content/drive/MyDrive/mvp_4dgs_job/frames",
-    "masks_dir": "/content/drive/MyDrive/mvp_4dgs_job/masks",
-    "poses": "/content/drive/MyDrive/mvp_4dgs_job/poses/poses.json",
-    "bg_shim": "/content/drive/MyDrive/mvp_4dgs_job/gs_shim/bg_plane.ply"
-  },
-  "timestamp": 1700000000
-}
-```
-
-## Resuming from Checkpoints
-
-The notebook automatically saves checkpoints after each major stage. To resume:
-
-1. Re-run Configuration cell
-2. Skip to the cell after your last checkpoint
-3. Continue execution
-
-Checkpoints are stored in `ROOT/checkpoints/manifest_*.json`
-
-## Session Timeout Handling
-
-Google Colab free tier has session timeouts (~12 hours). To handle this:
-
-### Strategy 1: Manual Resume
-
-1. Checkpoints persist on Google Drive
-2. Re-open notebook after timeout
-3. Re-run from last successful stage
-
-### Strategy 2: Papermill Automation
-
-```bash
-bash scripts/run_colab_headless.sh notebooks/colab_pipeline.ipynb output.ipynb
-```
-
-### Strategy 3: Colab Pro
-
-Colab Pro/Pro+ offers:
-- Longer timeouts
-- Background execution
-- Priority GPU access
-
-### Strategy 4: Cloud GPU Rental
-
-For uninterrupted long runs:
-
-- **Lambda Labs**: A100 rentals ($1.10/hr)
-- **RunPod**: On-demand GPUs
-- **Vast.ai**: Spot instances
-
-## Testing
-
-Run unit tests locally:
-
-```bash
-# Install test dependencies
-pip install pytest pytest-cov
-
-# Run all tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=src --cov-report=html
-
-# Run specific test file
-pytest tests/test_colab_helpers.py -v
-```
-
-### Test Requirements
-
-Some tests require `open3d`. Install with:
-
-```bash
-pip install open3d
-```
-
-Tests will skip if dependencies are missing.
-
-## Troubleshooting
-
-### Common Issues
-
-**1. "No GPU detected"**
-
-- Ensure GPU runtime: Runtime → Change runtime type → GPU
-- Free tier has limited GPU availability
-
-**2. "Drive mount failed"**
-
-- Re-run mount cell
-- Check browser popup for authorization
-
-**3. "ffmpeg not found"**
-
-- Run dependencies installation cell
-- Colab usually has ffmpeg pre-installed
-
-**4. "Out of memory"**
-
-- Reduce frame count
-- Use DEBUG_SHIM mode
-- Request A100 in Colab Pro
-
-**5. "COLMAP installation failed"**
-
-- Expected in free tier
-- Notebook uses OpenCV fallback automatically
-
-### Debug Logs
-
-Check logs in `ROOT/logs/`:
-
-```
-install.log          # Dependency installation
-frames_err.log       # Frame extraction errors
-4dgs_err.log         # 4DGS build/run errors
-manifest_err.log     # Manifest save errors
-```
-
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-# Clone with submodules
-git clone --recursive https://github.com/YOUR_USERNAME/mvp-4dgs-mv-colab.git
-
-# Install dev dependencies
-pip install -r requirements.txt
-pip install pytest pytest-cov black flake8
-
-# Run tests before committing
-pytest tests/
-```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-If you use this work in your research, please cite:
-
-```bibtex
-@software{mvp_4dgs_mv_colab,
-  title={MVP 4DGS MV Colab: Production-Ready Multi-View Pipeline},
-  author={Your Name},
-  year={2025},
-  url={https://github.com/YOUR_USERNAME/mvp-4dgs-mv-colab}
-}
-```
-
-## Acknowledgments
-
-- [4DGaussians](https://github.com/hustvl/4DGaussians) - Original 4D Gaussian Splatting implementation
-- [Segment Anything (SAM)](https://github.com/facebookresearch/segment-anything) - Segmentation
-- [Robust Video Matting (RVM)](https://github.com/PeterL1n/RobustVideoMatting) - Video matting
-- [COLMAP](https://colmap.github.io/) - Structure from Motion
-- [Open3D](http://www.open3d.org/) - 3D geometry processing
-- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) - Super-resolution
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/mvp-4dgs-mv-colab/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/mvp-4dgs-mv-colab/discussions)
-
-## Roadmap
-
-- [ ] Real SAM2 integration
-- [ ] Real RVM integration
-- [ ] RAFT optical flow support
-- [ ] Multi-GPU support
-- [ ] Automatic checkpoint recovery
-- [ ] Web UI for parameter tuning
-- [ ] Batch processing support
+- **Two notebooks, one script.** `notebooks/colab_pipeline.ipynb` (36 cells, Google Drive workspace) and `notebooks/runpod_pipeline.ipynb` (18 cells, `/workspace`) walk through the same stages; `run_pipeline.py` is the non-interactive RunPod version.
+- **`DEBUG_SHIM` switch.** `True` runs the whole flow in minutes with Python placeholders and an Open3D background plane instead of a trained model; `False` expects a built [hustvl/4DGaussians](https://github.com/hustvl/4DGaussians) checkout at `FOURGS_REPO`.
+- **Frame extraction with FFmpeg** at a chosen `FPS` into `frames/%06d.png`.
+- **Masks and mattes.** Coarse mask by brightness threshold, alpha matte by Gaussian blur, then temporal smoothing of the mattes with OpenCV Farneback optical flow. Hooks for SAM and RVM checkpoints exist but currently fall back to the placeholders.
+- **Actor export.** Frames are composited with their mattes into RGBA PNGs; on RunPod `render_green_screen` also writes the subject over a solid green background as `outputs/green_screen.mp4` for compositing.
+- **Manifests and resume.** `save_manifest` / `load_manifest` record each stage's artifacts and timestamp under `checkpoints/`, `save_runs_meta` records GPU and config, and `scripts/save_manifest.py` does the same from the shell. `run_log_example.json` shows a complete manifest.
+- **Self-bootstrapping RunPod script.** `run_pipeline.py` installs FFmpeg and the Python packages, downgrades PyTorch to 1.13.1 (+cu117) when 4DGS mode is on, clones 4DGaussians with submodules and builds `diff-gaussian-rasterization` and `simple-knn`, then exits once so the new torch can load.
+
+**Also included**
+
+- `scripts/build_4dgs_shim.sh`, an interactive build of 4DGaussians on Colab; `scripts/run_colab_headless.sh`, papermill execution of the notebook for unattended runs.
+- `src/gs_shim.py`: `generate_bg_plane`, `generate_bg_plane_with_depth_variation`, `create_simple_scene`, `load_and_preview_ply` (Open3D point clouds used as the stand-in scene).
+- `env.template` listing every knob (`ROOT`, `DEBUG_SHIM`, `SAM_CHECKPOINT`, `RVM_CHECKPOINT`, `FOURGS_REPO`, `COLMAP_BIN`, `FPS`, shim grid size, output size).
+- 31 pytest unit tests for the helpers and the shim.
 
 ---
 
-**Made with ❤️ for the 4DGS community**
+## How it works
+
+```text
+input.mp4
+  │ ffmpeg -vf fps=FPS
+  ▼
+frames/*.png ──▶ masks/coarse (threshold) ──▶ masks/alpha (blur) ──▶ Farneback temporal smoothing
+  │                                                                          │
+  ├──▶ poses/poses.json   (pycolmap if importable, else placeholder poses)   │
+  │                                                                          ▼
+  ├──▶ DEBUG_SHIM=True : gs_shim/bg_plane.ply (Open3D plane)        actor_rgba/*.png
+  │    DEBUG_SHIM=False: python $FOURGS_REPO/train.py -s frames -m gs --eval
+  ▼
+outputs/preview.mp4 (actor over background)  ·  outputs/green_screen.mp4 (RunPod)  ·  outputs/sr_sample.png
+checkpoints/manifest_<stage>.json  ·  runs_meta.json  ·  logs/*.log
+```
+
+1. **Runtime check.** `nvidia-smi`, A100 detection, and (RunPod) disk space.
+2. **Workspace.** `ensure_dirs(ROOT)` creates `input/ frames/ masks/{coarse,alpha}/ poses/ gs_shim/ gs/ actor_rgba/ outputs/ logs/ checkpoints/`.
+3. **Input.** Upload through the browser, point at a Drive file, or pass `--input`; `validate_input_video` checks it opens and has frames.
+4. **Stages 6 to 15** run in order as drawn above; each one prints its method and whether it used a placeholder.
+5. **Manifest.** The final cell writes `checkpoints/manifest_complete.json`; re-run the configuration cell and continue from any later cell to resume.
+
+<details>
+<summary><strong>What is real and what is a placeholder, per stage</strong></summary>
+
+| Stage | Colab notebook | `run_pipeline.py` / RunPod notebook |
+| --- | --- | --- |
+| Frame extraction | FFmpeg, real | FFmpeg, real |
+| Coarse segmentation | brightness threshold; SAM branch prints "not yet implemented" | threshold |
+| Alpha matting | Gaussian blur of the mask; RVM branch not implemented | Gaussian blur |
+| Temporal smoothing | Farneback optical flow, real | not present |
+| Camera poses | `pycolmap` if installed; otherwise identity poses with a 0.1 m x-offset per frame (the "OpenCV SIFT+PnP fallback" label is aspirational, no SIFT runs) | identity poses |
+| 4DGS training | `subprocess.run(train.py ...)` when `DEBUG_SHIM=False` and the repo exists | command is printed, not executed; `gs/output.ply` is touched |
+| Actor RGBA / preview | real compositing | real compositing + green screen |
+| Super-resolution | bicubic 2x; Real-ESRGAN branch not implemented | not present |
+
+</details>
+
+---
+
+## Tech stack
+
+<p>
+  <kbd>Python&nbsp;3.10+</kbd> &nbsp; <kbd>Jupyter&nbsp;/&nbsp;Colab</kbd> &nbsp; <kbd>papermill</kbd> &nbsp; <kbd>FFmpeg</kbd> &nbsp; <kbd>OpenCV</kbd> &nbsp; <kbd>NumPy&nbsp;&lt;1.24</kbd> &nbsp; <kbd>Open3D</kbd> &nbsp; <kbd>trimesh</kbd> &nbsp;
+  <kbd>PyTorch&nbsp;1.13.1</kbd> &nbsp; <kbd>hustvl/4DGaussians</kbd> &nbsp; <kbd>pytest</kbd>
+</p>
+
+---
+
+## Getting started
+
+**Prerequisites**
+
+- Colab: a GPU runtime (the notebook records whether it is an A100). Free tier works for `DEBUG_SHIM=True`.
+- RunPod: a CUDA 11.7/11.8 template with `/workspace` attached. 4DGaussians needs PyTorch 1.13.1; the script downgrades a newer torch automatically, so do not start from a PyTorch 2.x template you want to keep.
+- Locally, only the tests: Python 3.10+, `pip install -r requirements.txt` (or just `pytest open3d numpy opencv-python-headless` to run them).
+
+**Colab**
+
+1. Open the notebook with the badge above (it points at this repo's default branch).
+2. Run cell 1 and 2 to mount Drive; the workspace is `/content/drive/MyDrive/mvp_4dgs_job`.
+3. In the configuration cell set `DEBUG_SHIM = True` for the demo path (the committed default is `False`, which expects a built 4DGaussians at `/content/4dgs_repo`; the last cell builds it, 10 to 20 minutes).
+4. Run the remaining cells in order. Outputs and manifests land on Drive.
+
+**RunPod**
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/yc9954/mv_generator/claude/4dgs-colab-setup-01EzHeaT6YawPrxxsB3bYmUp/easy_start.sh)   # clones this branch
+cd mv_generator
+
+python run_pipeline.py --input my_video.mp4 --debug_shim      # placeholder run, no CUDA build
+python run_pipeline.py --input my_video.mp4                   # installs torch 1.13.1 + builds 4DGS, then asks you to re-run once
+```
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `--root` | `/workspace/mvp_4dgs_job` | Workspace with the directory layout above. |
+| `--input`, `-i` | `ROOT/input/input.mp4` | Video to process; copied into the workspace. |
+| `--fps` | `30` | Extraction rate. |
+| `--debug_shim` | off | Skip the 4DGS build and touch a fake `gs/output.ply`. |
+| `--repo` | `/workspace/4dgs_repo` | Where 4DGaussians is cloned and built. |
+
+**Headless Colab notebook**
+
+```bash
+bash scripts/run_colab_headless.sh notebooks/colab_pipeline.ipynb notebooks/colab_pipeline_executed.ipynb
+```
+
+---
+
+## Building and testing
+
+```bash
+pip install pytest pytest-cov open3d
+pytest tests/                       # 17 helper tests + 14 shim tests; Open3D-dependent ones skip if it is missing
+pytest tests/ --cov=src --cov-report=html
+```
+
+`samples/synthetic_test_frames/` holds five 640x480 PNGs of a moving red rectangle for the tests. `samples/tiny_sample.mp4` is committed as an empty file; regenerate it with the FFmpeg line in `samples/README.md`.
+
+---
+
+## Notebooks
+
+| File | Cells | What it does |
+| --- | --- | --- |
+| `notebooks/colab_pipeline.ipynb` | 36 | Full 17-step Colab flow: GPU check, Drive mount, configuration, install, upload, frames, coarse masks, mattes, temporal smoothing, poses, GS shim, real 4DGS, actor RGBA, preview, SR test, manifest, 4DGS build instructions. |
+| `notebooks/runpod_pipeline.ipynb` | 18 | Condensed RunPod flow with `DEBUG_SHIM=False` default, dependency install and CUDA-extension check, frames, placeholder masks and poses, simulated training, actor RGBA, green-screen render. |
+
+---
+
+## Repository structure
+
+| Path | What lives there |
+| --- | --- |
+| `notebooks/` | The two notebooks above. |
+| `run_pipeline.py` | RunPod CLI: runtime check, dependency and 4DGS bootstrap, frames, masks, poses, (simulated) training, RGBA and green-screen export. |
+| `src/colab_helpers.py`, `src/runpod_helpers.py` | `ensure_dirs`, `sha256`, `log_and_print`, `save_manifest`, `load_manifest`, `save_runs_meta`, `list_artifacts`, `validate_input_video`; the RunPod copy adds `render_green_screen`. |
+| `src/gs_shim.py` | Open3D point-cloud stand-ins for a trained scene. |
+| `scripts/` | `save_manifest.py`, `build_4dgs_shim.sh`, `run_colab_headless.sh`. |
+| `tests/` | `test_colab_helpers.py`, `test_gs_shim.py`. |
+| `samples/` | Synthetic test frames and the (empty) sample video. |
+| `easy_start.sh`, `env.template`, `requirements.txt`, `run_log_example.json`, `CHANGELOG.md` | Bootstrap, configuration reference, pinned dependencies, example manifest, 1.0.0 release notes. |
+
+---
+
+## Project status
+
+**Working today.** The scaffolding: workspace layout, manifests and resume, FFmpeg frame extraction, threshold masks and blurred mattes, Farneback temporal smoothing (Colab), RGBA export, preview and green-screen videos, the RunPod dependency bootstrap with PyTorch downgrade and CUDA-extension build, and the unit tests.
+
+**Placeholder by design, for now.** Segmentation, matting, super-resolution and camera poses are stubs: the SAM, RVM, Real-ESRGAN and SIFT+PnP branches described in the earlier README and CHANGELOG are not implemented, and `poses.json` contains synthetic identity transforms unless `pycolmap` happens to be importable. Because the poses are fake, a 4DGS model trained from this pipeline will not be meaningful even when `train.py` does run. `run_pipeline.py` and the RunPod notebook never execute training; the Colab notebook does when `DEBUG_SHIM=False` and the repo exists.
+
+**Known limitations.** `requirements.txt` pins `numpy<1.24` and `torch==1.13.1`, which conflicts with a modern Colab image; the notebooks install their own smaller set instead. `samples/tiny_sample.mp4` is 0 bytes. The runtime numbers in `run_log_example.json` are an illustrative manifest, not a measured run. Commit history covers 2025-12-06 to 2025-12-08; the roadmap in the earlier README (SAM2, RVM, RAFT, multi-GPU, web UI, batch mode) is unstarted.
+
+**Credits.** [4DGaussians](https://github.com/hustvl/4DGaussians) (training and CUDA rasterizer), [Segment Anything](https://github.com/facebookresearch/segment-anything), [Robust Video Matting](https://github.com/PeterL1n/RobustVideoMatting), [COLMAP](https://colmap.github.io/), [Open3D](http://www.open3d.org/), [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).
+
+---
+
+## License
+
+[MIT](LICENSE).
