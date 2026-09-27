@@ -192,6 +192,11 @@ pytest tests/                       # 17 helper tests + 14 shim tests; Open3D-de
 pytest tests/ --cov=src --cov-report=html
 ```
 
+With Open3D 0.20 on Python 3.11, 23 tests pass and 8 in `tests/test_gs_shim.py` fail with
+`AttributeError: type object 'Vector3dVector' has no attribute 'numpy'`: the tests read points with
+`o3d.utility.Vector3dVector.numpy(pcd.points)`, which is not an Open3D API (`np.asarray(pcd.points)` is).
+The shim itself works; the figure above was rendered from its PLY output.
+
 `samples/synthetic_test_frames/` holds five 640x480 PNGs of a moving red rectangle (and a static green one) for the tests. `samples/tiny_sample.mp4` is those five frames encoded at 5 fps with the FFmpeg line in `samples/README.md`.
 
 ---
